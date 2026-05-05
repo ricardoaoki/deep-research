@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSINT Research Interface</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #08111f;
+        --panel: rgba(16, 26, 44, 0.82);
+        --panel-strong: #111d31;
+        --line: rgba(148, 163, 184, 0.24);
+        --text: #e5edf7;
+        --muted: #98a8bd;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        --warn: #f59e0b;
+        --danger: #f87171;
+        --ok: #34d399;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+            circle at top left,
+            rgba(14, 165, 233, 0.22),
+            transparent 32rem
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(52, 211, 153, 0.16),
+            transparent 28rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0;
+      }
+
+      header {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        margin-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2.25rem, 6vw, 5rem);
+        letter-spacing: -0.07em;
+        line-height: 0.92;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .subtitle {
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 1.06rem;
+        line-height: 1.7;
+        margin-top: 18px;
+      }
+
+      .status-pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--ok);
+        padding: 10px 16px;
+        background: rgba(52, 211, 153, 0.08);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
+        gap: 22px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(18px);
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .policy {
+        border-left: 4px solid var(--warn);
+        background: rgba(245, 158, 11, 0.09);
+        border-radius: 20px;
+        padding: 16px;
+        color: #ffe8bd;
+        line-height: 1.55;
+        margin-top: 20px;
+      }
+
+      label {
+        display: block;
+        color: #d9e5f4;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(8, 17, 31, 0.72);
+        color: var(--text);
+        font: inherit;
+        padding: 13px 14px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
+      }
+
+      .field {
+        margin-top: 18px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .templates {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .template {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.58);
+        padding: 14px;
+        cursor: pointer;
+        transition: 0.18s ease;
+      }
+
+      .template:hover,
+      .template.active {
+        border-color: var(--accent);
+        background: rgba(14, 165, 233, 0.13);
+        transform: translateY(-1px);
+      }
+
+      .template strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .template span,
+      .hint {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .check input {
+        width: auto;
+        margin-top: 4px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 16px;
+        background: linear-gradient(
+          135deg,
+          var(--accent),
+          var(--accent-strong)
+        );
+        color: #02111f;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        padding: 14px 18px;
+        width: 100%;
+        margin-top: 20px;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        filter: grayscale(0.7);
+        opacity: 0.62;
+      }
+
+      .output-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        padding: 20px 24px;
+      }
+
+      .output-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .secondary {
+        width: auto;
+        margin: 0;
+        padding: 10px 12px;
+        background: rgba(148, 163, 184, 0.16);
+        color: var(--text);
+      }
+
+      .message {
+        min-height: 540px;
+        padding: 24px;
+        overflow: auto;
+      }
+
+      .message pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+        line-height: 1.58;
+        color: #dbeafe;
+      }
+
+      .sources {
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .sources a {
+        color: #7dd3fc;
+        display: block;
+        overflow-wrap: anywhere;
+        margin-top: 8px;
+      }
+
+      .error {
+        color: #fecaca;
+        background: rgba(248, 113, 113, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.28);
+        padding: 14px;
+        border-radius: 16px;
+        margin-top: 16px;
+      }
+
+      @media (max-width: 900px) {
+        header,
+        .grid,
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        .status-pill {
+          width: fit-content;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <p class="eyebrow">Deep Research OSINT</p>
+          <h1>Interface de investigação pública</h1>
+          <p class="subtitle">
+            Gere briefings OSINT com fontes abertas, finalidade legítima e
+            trilhas de evidência. A interface bloqueia pedidos de identificação
+            de pessoas privadas, busca reversa de telefone, credenciais,
+            vazamentos e técnicas intrusivas.
+          </p>
+        </div>
+        <div class="status-pill">Somente fontes públicas</div>
+      </header>
+
+      <section class="grid">
+        <form class="card card-body" id="osint-form">
+          <h2>Escopo da pesquisa</h2>
+          <p class="policy">
+            Use para organizações, domínios, tecnologias, incidentes, mercados
+            ou documentos públicos. Não use para localizar, expor ou deanomizar
+            pessoas privadas.
+          </p>
+
+          <div class="field">
+            <label>Playbook</label>
+            <div class="templates" id="templates"></div>
+          </div>
+
+          <div class="field">
+            <label for="query">Alvo, tópico ou pergunta</label>
+            <textarea
+              id="query"
+              name="query"
+              placeholder="Ex.: postura pública do domínio example.com; análise de incidente reportado pela empresa X; panorama do setor Y"
+              required
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <label for="purpose">Finalidade analítica</label>
+            <textarea
+              id="purpose"
+              name="purpose"
+              placeholder="Ex.: due diligence de fornecedor, triagem reputacional, preparação de relatório executivo"
+            ></textarea>
+          </div>
+
+          <div class="row field">
+            <div>
+              <label for="breadth">Amplitude</label>
+              <input
+                id="breadth"
+                name="breadth"
+                type="number"
+                min="1"
+                max="10"
+                value="4"
+              />
+              <p class="hint">Quantidade de consultas paralelas.</p>
+            </div>
+            <div>
+              <label for="depth">Profundidade</label>
+              <input
+                id="depth"
+                name="depth"
+                type="number"
+                min="1"
+                max="5"
+                value="2"
+              />
+              <p class="hint">Rodadas recursivas de pesquisa.</p>
+            </div>
+          </div>
+
+          <div class="row field">
+            <div>
+              <label for="mode">Saída</label>
+              <select id="mode" name="mode">
+                <option value="report">Relatório completo</option>
+                <option value="answer">Resposta curta</option>
+              </select>
+            </div>
+            <div>
+              <label for="target-type">Tipo de alvo</label>
+              <select id="target-type" name="targetType"></select>
+            </div>
+          </div>
+
+          <div class="field check">
+            <input
+              id="authorization"
+              name="authorization"
+              type="checkbox"
+              required
+            />
+            <label for="authorization">
+              Confirmo que a pesquisa tem finalidade legítima, usará apenas
+              fontes públicas e não visa identificar, localizar ou expor pessoas
+              privadas.
+            </label>
+          </div>
+
+          <button id="submit" type="submit">Executar pesquisa OSINT</button>
+          <div id="form-error" class="error" hidden></div>
+        </form>
+
+        <section class="card" aria-live="polite">
+          <div class="output-header">
+            <div>
+              <h2>Briefing</h2>
+              <p class="hint" id="status">Aguardando pesquisa.</p>
+            </div>
+            <div class="output-actions">
+              <button class="secondary" id="copy" type="button">Copiar</button>
+              <button class="secondary" id="download" type="button">
+                Baixar .md
+              </button>
+            </div>
+          </div>
+          <div class="message">
+            <pre id="answer">
+Configure o escopo à esquerda e execute a pesquisa.</pre
+            >
+            <div class="sources" id="sources" hidden>
+              <h3>Fontes visitadas</h3>
+              <div id="source-list"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector('#osint-form');
+      const templatesEl = document.querySelector('#templates');
+      const targetTypeEl = document.querySelector('#target-type');
+      const statusEl = document.querySelector('#status');
+      const answerEl = document.querySelector('#answer');
+      const sourcesEl = document.querySelector('#sources');
+      const sourceListEl = document.querySelector('#source-list');
+      const errorEl = document.querySelector('#form-error');
+      const submitEl = document.querySelector('#submit');
+      const copyEl = document.querySelector('#copy');
+      const downloadEl = document.querySelector('#download');
+      let latestMarkdown = '';
+
+      async function loadTemplates() {
+        const response = await fetch('/api/osint/templates');
+        const templates = await response.json();
+
+        targetTypeEl.innerHTML = templates
+          .map(
+            template =>
+              `<option value="${template.value}">${template.label}</option>`,
+          )
+          .join('');
+
+        templatesEl.innerHTML = templates
+          .map(
+            template => `
+              <div class="template" data-value="${template.value}" tabindex="0" role="button">
+                <strong>${template.label}</strong>
+                <span>${template.description}</span>
+              </div>
+            `,
+          )
+          .join('');
+
+        setActiveTemplate(targetTypeEl.value || templates[0].value);
+      }
+
+      function setActiveTemplate(value) {
+        targetTypeEl.value = value;
+        document.querySelectorAll('.template').forEach(card => {
+          card.classList.toggle('active', card.dataset.value === value);
+        });
+      }
+
+      templatesEl.addEventListener('click', event => {
+        const card = event.target.closest('.template');
+        if (card) setActiveTemplate(card.dataset.value);
+      });
+
+      templatesEl.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const card = event.target.closest('.template');
+        if (card) {
+          event.preventDefault();
+          setActiveTemplate(card.dataset.value);
+        }
+      });
+
+      targetTypeEl.addEventListener('change', event =>
+        setActiveTemplate(event.target.value),
+      );
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        errorEl.hidden = true;
+        submitEl.disabled = true;
+        statusEl.textContent = 'Pesquisando fontes públicas...';
+        answerEl.textContent =
+          'Executando pesquisa. Isso pode levar alguns minutos.';
+        sourcesEl.hidden = true;
+        sourceListEl.innerHTML = '';
+
+        const formData = new FormData(form);
+        const payload = {
+          query: formData.get('query'),
+          purpose: formData.get('purpose'),
+          targetType: formData.get('targetType'),
+          breadth: Number(formData.get('breadth')),
+          depth: Number(formData.get('depth')),
+          mode: formData.get('mode'),
+          authorizationAccepted: formData.get('authorization') === 'on',
+        };
+
+        try {
+          const response = await fetch('/api/osint/research', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || data.errors?.join('\n') || 'Falha na pesquisa.',
+            );
+          }
+
+          latestMarkdown = data.answer || data.report || '';
+          answerEl.textContent = latestMarkdown;
+          statusEl.textContent = `Concluído com ${data.visitedUrls.length} fonte(s) visitada(s).`;
+          sourceListEl.innerHTML = data.visitedUrls
+            .map(
+              url =>
+                `<a href="${url}" target="_blank" rel="noreferrer">${url}</a>`,
+            )
+            .join('');
+          sourcesEl.hidden = data.visitedUrls.length === 0;
+        } catch (error) {
+          latestMarkdown = '';
+          statusEl.textContent = 'Pesquisa interrompida.';
+          answerEl.textContent = 'Não foi possível concluir a pesquisa.';
+          errorEl.textContent = error.message;
+          errorEl.hidden = false;
+        } finally {
+          submitEl.disabled = false;
+        }
+      });
+
+      copyEl.addEventListener('click', async () => {
+        if (!latestMarkdown) return;
+        await navigator.clipboard.writeText(latestMarkdown);
+        statusEl.textContent = 'Briefing copiado para a área de transferência.';
+      });
+
+      downloadEl.addEventListener('click', () => {
+        if (!latestMarkdown) return;
+        const blob = new Blob([latestMarkdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'osint-briefing.md';
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      loadTemplates().catch(error => {
+        errorEl.textContent = error.message;
+        errorEl.hidden = false;
+      });
+    </script>
+  </body>
+</html>

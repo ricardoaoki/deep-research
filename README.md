@@ -150,6 +150,21 @@ The system will then:
 
 The final report will be saved as `report.md` or `answer.md` in your working directory, depending on which modes you selected.
 
+### OSINT web interface
+
+Start the API server to use the browser-based OSINT interface:
+
+```bash
+npm run api
+```
+
+Then open `http://localhost:3051`. The interface provides scoped OSINT playbooks for organizations, domains, technologies, incidents, markets, and public documents. It requires the analyst to confirm a legitimate public-source purpose and blocks requests for reverse phone lookup, private-person identification, residential addresses, credentials, breach data, intrusive scanning, exploitation, and social engineering.
+
+The same workflow is available programmatically through:
+
+- `GET /api/osint/templates` to list supported OSINT playbooks
+- `POST /api/osint/research` to run a scoped OSINT report or answer
+
 ### Concurrency
 
 If you have a paid version of Firecrawl or a local version, feel free to increase the `ConcurrencyLimit` by setting the `CONCURRENCY_LIMIT` environment variable so it runs faster.
@@ -198,7 +213,7 @@ CUSTOM_MODEL="custom_model"
    - Compiles all findings into a comprehensive markdown report
    - Includes all sources and references
    - Organizes information in a clear, readable format
-  
+
 ## Community implementations
 
 **Python**: https://github.com/Finance-LLMs/deep-research-python
